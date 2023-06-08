@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../Firebase/css/style.css">
+</head>
+<body>
+  <div id="register">
+    <div id="date" style="display: flex; justify-content: center; align-items: center;">
+      <div style="text-align: center;">
+        <h1 style="margin: 0;">日付選択</h1>
+        <input type="date" id="sdates" style="width: 150px; height: 30px;">
+      </div>
+    </div>
+
+    <div id="text">
+      <input type="text" id="itext" placeholder="作業予定を入力" style="width: 250px; height: 100px; margin-top: 20px; font-size: 20px;">
+    </div>
+
+    <select id="serect" style="width: 100px; height: 30px; margin-top: 20px; margin-left: 30px;">
+      <option value="入室">入室</option>
+      <option value="退室">退室</option>
+    </select>
+
+    <button id="save" type="button" style="width: 100px; height: 30px;margin-top: 20px;">登録</button>
+  </div>
+
+  <h1 style="text-align: center;">対応スケジュール</h1>
+  <div id="output"></div>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="../Firebase/js/firebase.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
+    import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved }
+    from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      // Firebaseの設定情報
+    apiKey: 
+    authDomain: 
+    databaseURL:
+    projectId: 
+    storageBucket: 
+    messagingSenderId:
+    appId: 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app); //RealtimeDBに接続
+    const dbRef = ref(db, "chat"); //RealtimeDB内の"chat"を使う
+
+      // データ登録 (click)
+  $("#save").on("click", function() {
+    const sdates = $("#sdates").val();
+    const itext = $("#itext").val();
+    const serect = $("#serect").val();
+
+    const msg = {
+      sdates: sdates,
+      itext: itext,
+      serect: serect
+    };
+
+    // 入力部分が空欄の場合にアラートを表示
+    if (sdates === '' || itext === '' ) {
+    alert("日付、作業予定を入力を入力してください。");
+    return;
+    }
+
+    const newPosRef = push(dbRef);
+    set(newPosRef, msg);
+    });
+
+  // 最初のデータ取得＆onSnapshotでリアルタイムにデータを取得
+    onChildAdded(dbRef, function(snapshot) {
+    const msg = snapshot.val();
+    const key = snapshot.key;
+
+    let h = `
+      <h1 class="schedule" style="font-size: 20px; font-weight: normal; 
+      line-height: 5px; padding-left: 3px; border: groove; width:200px;">
+        <p>${msg.sdates}</p>
+        <p>${msg.itext}　${msg.serect}</p>
+        <button class="delete-button" style="margin-bottom:10px;">対応完了</button> 
+      </h1>
+    `;
+
+    const scheduleElement = $(h);
+    scheduleElement.find(".delete-button").click(function() {
+    // 削除処理
+    remove(ref(db, "chat/" + key)); // 修正
+    scheduleElement.remove();
+    });
+
+    $("#output").append(scheduleElement); // scheduleElementを追加
+    console.log(msg);
+    console.log(key);
+
+    $("#sdates").val("");
+    $("#itext").val("");
+
+    });
+
+    </script>
+    
+</body>
+</html>
